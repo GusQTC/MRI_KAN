@@ -15,6 +15,8 @@ torch.set_default_dtype(torch.float32)
 
 # Define the transform to convert image data to tensors
 
+
+#
 class ReshapeTransform:
     def __call__(self, img):
         return img.view(-1)
@@ -35,7 +37,7 @@ input_size = 3 * 128 * 128
 #image is 512 by 512 rgb
 num_classes = 4
 batch_size = 72
-num_epochs = 10
+num_epochs = 2
 # Load and preprocess the dataset using ImageFolder
 dataset = ImageFolder(root='dataset', transform=transform)
 
@@ -46,6 +48,23 @@ train_set, test_set = train_test_split(dataset, test_size=0.2, random_state=42)
 train_loader = DataLoader(train_set, batch_size, shuffle=True)
 test_loader = DataLoader(test_set, batch_size, shuffle=False)
 images, labels = next(iter(train_loader))
+# In KAN its as below
+#  dataset : dic
+               # contains dataset['train_input'], dataset['train_label'], dataset['test_input'], dataset['test_...
+# THerefore, we need to change the dataset for this new format
+class CustomDataset(Dataset):
+
+    def __init__(self, inputs, labels):
+        self.inputs = inputs
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.inputs)
+
+    def __getitem__(self, idx):
+        return self.inputs[idx], self.labels[idx]
+
+
 
 # Define the neural network architecture
 class MyModel(nn.Module):
@@ -98,17 +117,20 @@ def test_model(model, criterion, dataloader):
     total_samples = 0
     
     with torch.no_grad():  # No need to track gradients during testing
-        for inputs, labels in dataloader:
-            outputs = model(inputs)
+        for inputs_test, labels_test in dataloader:
+            print(f"Input shape: {inputs_test.shape}, Label shape: {labels_test.shape}")
+            print(inputs_test)
+            print(labels_test)
+            outputs = model(inputs_test)
             _, predicted_labels = torch.max(outputs.data, 1)
-            loss = criterion(outputs, labels)
+            loss = criterion(outputs, labels_test)
             
             # Update running loss
             running_loss += loss.item()
             
             # Count correct predictions
-            correct_predictions += (predicted_labels == labels).sum().item()
-            total_samples += labels.size(0)
+            correct_predictions += (predicted_labels == labels_test).sum().item()
+            total_samples += labels_test.size(0)
     
     # Calculate average loss and accuracy
     avg_loss = running_loss / len(dataloader)
@@ -128,12 +150,15 @@ def train(model, optimizer, criterion, train_loader, steps):
                 optimizer.step()                
                 # Optionally, print statistics
                 running_loss += loss.item()
-                print(f'Epoch: {epoch+1}, Loss: {running_loss}, Percent Complete: {i/len(train_loader)}')
+                print(f'Epoch: {epoch+1}, Loss: {loss.item()}, Percent Complete: {i/len(train_loader)}')
             avg_loss = running_loss / len(train_loader)
             print(f'Epoch {epoch+1}, Average Loss: {avg_loss:.4f}')
 
 # Train the model
 train(model, optimizer, criterion, train_loader, steps=10)
+for inputs_test, labels_test in test_loader:
+            print(f"Input shape: {inputs_test.shape}, Label shape: {labels_test.shape}")
+            print(test_loader.shape[0])
 test_model(model, criterion, test_loader)
 
 # Perform automatic symbolic regression

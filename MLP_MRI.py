@@ -11,12 +11,15 @@ import torchvision.transforms as transforms
 # Define the transform to convert image data to tensors
 
 transform = transforms.Compose([
-    transforms.Resize((128, 128)),  # Resize all images to
+    transforms.Resize((256, 256)),  # Resize all images to
     transforms.ToTensor()  # Then convert them to tensors
 ])
 
 
-input_size = 3 * 128 * 128
+input_size = 3 * 256 * 256  # 3 channels (RGB) and 512x512 image size
+learning_rate = 0.005
+num_epochs = 15
+batch_size = 96
 #image is 512 by 512 rgb
 num_classes = 4
 # Load and preprocess the dataset using ImageFolder
@@ -26,17 +29,18 @@ dataset = ImageFolder(root='dataset', transform=transform)
 train_set, test_set = train_test_split(dataset, test_size=0.2, random_state=42)
 
 # Define the dataloaders for training and testing
-train_loader = DataLoader(train_set, batch_size=12, shuffle=True)
-test_loader = DataLoader(test_set, batch_size=12, shuffle=False)
+train_loader = DataLoader(train_set, batch_size, shuffle=True)
+test_loader = DataLoader(test_set, batch_size, shuffle=False)
 
 # Define the neural network architecture
 class MLP(nn.Module):
     def __init__(self, input_size, num_classes):
         super(MLP, self).__init__()
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(input_size, 128)  # Hidden layer with 128 units
+        self.fc1 = nn.Linear(input_size, 256)  # Hidden layer with 256 units
         self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(128, num_classes)  # Output layer for classification
+        self.fc2 = nn.Linear(256, 256)
+        self.fc3 = nn.Linear(256, num_classes)  # Output layer for classification
 
     def forward(self, x):
         x = self.flatten(x)
@@ -46,21 +50,24 @@ class MLP(nn.Module):
         return torch.softmax(x, dim=1)
 
 # Create an instance of the model
-model = MLP(input_size, num_classes)  # Replace input_size and num_classes with appropriate values
+model = MLP(input_size, num_classes) 
 
 # Define the loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # Train the model
-for epoch in range(10):  # Replace 10 with the desired number of epochs
+for epoch in range(num_epochs):  # Replace 10 with the desired number of epochs
     model.train()
+    iteration = 0
     for images, labels in train_loader:
+        iteration += 1
         optimizer.zero_grad()
         outputs = model(images)
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
+        print(f'Epoch {epoch} Percent {iteration / len(train_loader)}, Loss: {loss:.4f}')
 
 # Evaluate the model
 model.eval()
@@ -76,4 +83,5 @@ with torch.no_grad():
 accuracy = correct / total
 print('Test accuracy:', accuracy)
 
-#Test accuracy: 0.12863705972434916
+#Test accuracy: 0.2649310872894334
+

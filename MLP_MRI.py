@@ -20,8 +20,8 @@ transform = transforms.Compose([
 
 input_size =  512 * 512  # Image is 3 channels (RGB) and 512x512 image size
 learning_rate = 0.05
-num_epochs = 15
-batch_size = 64
+num_epochs = 25
+batch_size = 96
 #image is 512 by 512 rgb
 num_classes = 2
 # Load and preprocess the dataset using ImageFolder
@@ -42,9 +42,9 @@ class MLP(nn.Module):
     def __init__(self, input_size, num_classes):
         super(MLP, self).__init__()
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(input_size, 64)  # Reduced the number of units in the hidden layer
+        self.fc1 = nn.Linear(input_size, 32)  # Reduced the number of units in the hidden layer
         self.relu = nn.Sigmoid()
-        self.fc2 = nn.Linear(64, num_classes)  
+        self.fc2 = nn.Linear(32, num_classes)  
 
     def forward(self, x):
         x = self.flatten(x)
@@ -70,7 +70,7 @@ train_acc = []
 
 
 # variables for early stopping
-n_epochs_stop = 5
+n_epochs_stop = 3
 best_valid_loss = float('inf')
 epochs_no_improve = 0
 
@@ -131,7 +131,8 @@ with torch.no_grad():
 accuracy = correct / total
 print('Test accuracy:', accuracy)
 
-#Test accuracy: 0.7843137254901961
+#Test accuracy: 0.7973856209150327
+
 
 
 #1. Find features to extract, diminish the hypothesis space

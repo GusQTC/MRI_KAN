@@ -10,20 +10,22 @@ import torchvision.transforms as transforms
 
 # Define the transform to convert image data to tensors
 
+
 transform = transforms.Compose([
     transforms.Resize((256, 256)),  # Resize all images to
-    transforms.ToTensor()  # Then convert them to tensors
+    transforms.ToTensor(),  # Then convert them to tensors
+    transforms.Grayscale(num_output_channels=1),  # Convert the images to grayscale
 ])
 
 
-input_size = 3 * 256 * 256  # 3 channels (RGB) and 512x512 image size
-learning_rate = 0.005
+input_size = 256 * 256  # 3 channels (RGB) and 512x512 image size
+learning_rate = 0.05
 num_epochs = 15
 batch_size = 96
 #image is 512 by 512 rgb
-num_classes = 4
+num_classes = 2
 # Load and preprocess the dataset using ImageFolder
-dataset = ImageFolder(root='dataset', transform=transform)
+dataset = ImageFolder(root='new_dataset', transform=transform)# 1020 images
 
 # Split the dataset into training and testing sets
 train_set, test_set = train_test_split(dataset, test_size=0.2, random_state=42)
@@ -38,7 +40,7 @@ class MLP(nn.Module):
         super(MLP, self).__init__()
         self.flatten = nn.Flatten()
         self.fc1 = nn.Linear(input_size, 256)  # Hidden layer with 256 units
-        self.relu = nn.ReLU()
+        self.relu = nn.Sigmoid()                  # TODO test with sigmoid
         self.fc2 = nn.Linear(256, 256)
         self.fc3 = nn.Linear(256, num_classes)  # Output layer for classification
 
@@ -54,9 +56,10 @@ model = MLP(input_size, num_classes)
 
 # Define the loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+#optimizer = optim.Adam(model.parameters(), lr=learning_rate)    # TODO change optimizer - SGD, Adam, RMSprop
+optimizer = optim.SGD(model.parameters(), lr=learning_rate)
 
-# Train the model
+# Train the model # TODO change to train function
 for epoch in range(num_epochs):  # Replace 10 with the desired number of epochs
     model.train()
     iteration = 0
@@ -83,5 +86,11 @@ with torch.no_grad():
 accuracy = correct / total
 print('Test accuracy:', accuracy)
 
-#Test accuracy: 0.2649310872894334
+#Test accuracy: 0.6519607843137255
 
+
+#1. Resize the dataset images ( 3 * 512 * 512) - pca, grayscale
+#2. As imagens tem fundo preto, e pode confundir o modelo pq partes importantes tbm tem essa cor. Ai teriamos q ou cortar o fundo, ou trocar a cor do fundo
+#3. Tem a opcao de fazer um highlight dos tons de cinza, aumentando o contraste
+###4. Separar lado da imagem
+#5. Testar com outros otimizadores

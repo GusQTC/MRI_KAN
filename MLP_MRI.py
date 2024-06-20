@@ -12,15 +12,16 @@ import torchvision.transforms as transforms
 import cv2  # OpenCV for image processing
 from sklearn.preprocessing import StandardScaler
 
+dataset_path = 'new_dataset'
 
-image_pixels = 128
-neurons = 8
+image_pixels = 512
+neurons = 32
 num_samples = 1020
 input_size_pca =  image_pixels * image_pixels  # Image is 3 channels (RGB) and 512x512 image size #TODO change input for reducing size
-learning_rate = 0.05
+learning_rate = 0.005
 num_epochs = 25
-n_components_pca = 0.96
-batch_size = 96 # increasing doesnt improve accuracy,  it increases the time to train
+n_components_pca = 0.85
+batch_size = 48 
 #image is 512 by 512 rgb
 num_classes = 2 #TODO change to 4 classes
 input_size = 96
@@ -67,7 +68,7 @@ def apply_pca_float(image_tensor, n_components=n_components_pca, input_nn=input_
     image_np = image_tensor.numpy()
     
     # Normalize the image to have pixel values between 0 and 1
-    image_np = image_np / 255.0
+    #image_np = image_np / 255.0
     
     # Apply contrast normalization
     image_np = contrast_normalization(image_np)
@@ -111,7 +112,7 @@ transform = transforms.Compose([
     ])
 
 # Load and preprocess the dataset using ImageFolder
-dataset = ImageFolder(root='new_dataset', transform=transform)
+dataset = ImageFolder(root=dataset_path, transform=transform)
 
 
 train_set, test_set = train_test_split(dataset, test_size=0.3, random_state=42)
@@ -144,9 +145,9 @@ model = MLP(input_size, num_classes)
 
 # Define the loss function and optimizer
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)    # TODO change optimizer - SGD, Adam, RMSprop
+#optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.01)    # TODO change optimizer - SGD, Adam, RMSprop
 #weight_decay is the coefficient for the L2 regularization term. It helps prevent overfitting by penalizing large weights.
-#optimizer = optim.SGD(model.parameters(), lr=learning_rate)
+optimizer = optim.SGD(model.parameters(), lr=learning_rate)
 
 
 #DATA FOR PERFORMANCE
@@ -156,7 +157,7 @@ train_acc = []
 
 
 # variables for early stopping
-n_epochs_stop = 3
+n_epochs_stop = 5
 best_valid_loss = float('inf')
 epochs_no_improve = 0
 

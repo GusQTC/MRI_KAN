@@ -12,32 +12,39 @@ import torchvision.transforms as transforms
 import cv2  # OpenCV for image processing
 from sklearn.preprocessing import StandardScaler
 
-dataset_path = 'new_dataset'
-image_pixels = 512
-neurons = 16
-num_samples = 1020
-input_size_pca =  image_pixels * image_pixels
-learning_rate = 1
-num_epochs = 100
-n_components_pca = 0.90
-batch_size = 128
-num_classes = 2
-input_size = 16
+#dataset_path = 'easy_dataset'
+#image_pixels = 512
+#neurons = 16
+#num_samples = 1020
+#input_size_pca =  image_pixels * image_pixels
+#learning_rate = 0.1
+#num_epochs = 150
+#n_components_pca = 0.90
+#batch_size = 128
+#num_classes = 2
+#input_size = 16
+
+# variables for early stopping
+#n_epochs_stop = 3
 
 #Test accuracy: 0.9230769230769231
 
-#dataset_path = 'hard_dataset'
+dataset_path = 'hard_dataset'
 
-#image_pixels = 512
-#neurons = 96
-#num_samples = 1020
-#input_size_pca =image_pixels * image_pixels
-#learning_rate = 0.5
-#num_epochs = 100
-#n_components_pca = 0.90
-#batch_size = 128
-#num_classes = 4 
-#input_size = 96
+image_pixels = 512
+neurons = 96
+num_samples = 1020
+input_size_pca = image_pixels * image_pixels
+learning_rate = 0.5
+num_epochs = 150
+n_components_pca = 0.90
+batch_size = 128
+num_classes = 4 
+input_size = neurons
+
+# variables for early stopping
+n_epochs_stop = 5
+
 #Test accuracy: 0.8743718592964824
 
 def contrast_normalization(image_np):
@@ -179,8 +186,7 @@ valid_losses = []
 train_acc = []
 
 
-# variables for early stopping
-n_epochs_stop = 5
+
 best_valid_loss = float('inf')
 epochs_no_improve = 0
 

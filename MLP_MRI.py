@@ -12,21 +12,33 @@ import torchvision.transforms as transforms
 import cv2  # OpenCV for image processing
 from sklearn.preprocessing import StandardScaler
 
-dataset_path = 'hard_dataset'
-
+dataset_path = 'new_dataset'
 image_pixels = 512
-neurons = 24
+neurons = 16
 num_samples = 1020
-#694
-input_size_pca =  image_pixels * image_pixels  # Image is 3 channels (RGB) and 512x512 image size #TODO change input for reducing size
-learning_rate = 0.05
-num_epochs = 25
+input_size_pca =  image_pixels * image_pixels
+learning_rate = 1
+num_epochs = 100
 n_components_pca = 0.90
-batch_size = 128 #doesnt afect accuracy, but affects time to train
-#image is 512 by 512 rgb
-num_classes = 4 #TODO change to 4 classes
-input_size = 24
+batch_size = 128
+num_classes = 2
+input_size = 16
 
+#Test accuracy: 0.9230769230769231
+
+#dataset_path = 'hard_dataset'
+
+#image_pixels = 512
+#neurons = 96
+#num_samples = 1020
+#input_size_pca =image_pixels * image_pixels
+#learning_rate = 0.5
+#num_epochs = 100
+#n_components_pca = 0.90
+#batch_size = 128
+#num_classes = 4 
+#input_size = 96
+#Test accuracy: 0.8743718592964824
 
 def contrast_normalization(image_np):
     "Normalization for the contrast of the image, to improve the quality of the image for the model, as the black background can affect the performance"

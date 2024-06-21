@@ -58,10 +58,15 @@ dataset = ImageFolder(root='new_dataset', transform=transform)
 
 images = np.array([img.flatten() for img, _ in dataset])
 
-pca = PCA()
-pca.fit(images)
+#pca = PCA()
+#pca.fit(images)
 
+#show images
+for image in images:
+    plt.imshow(image.reshape(128, 128), cmap='gray')
+    plt.show()
 
+'''
 # Calculate cumulative explained variance
 cumulative_explained_variance = np.cumsum(pca.explained_variance_ratio_)
 
@@ -77,3 +82,4 @@ plt.show()
 # Find the optimal number of components for 95% variance
 optimal_components = np.where(cumulative_explained_variance >= 0.95)[0][0] + 1
 print(f'Optimal number of components: {optimal_components}')
+'''

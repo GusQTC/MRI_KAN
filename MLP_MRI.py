@@ -14,17 +14,17 @@ from sklearn.preprocessing import StandardScaler
 
 dataset_path = 'new_dataset'
 image_pixels = 512
-neurons = 20
+neurons = 16
 num_samples = 1020
 input_size_pca =  image_pixels * image_pixels
-learning_rate = 0.8
+learning_rate = 1
 num_epochs = 100
 n_components_pca = 0.90
 batch_size = 128
 num_classes = 2
-input_size = 20
+input_size = 16
 
-#Test accuracy: 0.8758169934640523
+#Test accuracy: 0.9230769230769231
 
 #dataset_path = 'hard_dataset'
 
@@ -120,6 +120,7 @@ transform = transforms.Compose([
     transforms.Resize((image_pixels, image_pixels)),  # Resize images for faster computation
     transforms.ToTensor(),
     transforms.Grayscale(num_output_channels=1),
+    #transforms.Lambda(apply_pca_float)
     
     ])
 

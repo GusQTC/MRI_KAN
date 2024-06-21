@@ -12,19 +12,20 @@ import torchvision.transforms as transforms
 import cv2  # OpenCV for image processing
 from sklearn.preprocessing import StandardScaler
 
-dataset_path = 'new_dataset'
+dataset_path = 'hard_dataset'
 
 image_pixels = 512
-neurons = 32
+neurons = 24
 num_samples = 1020
+#694
 input_size_pca =  image_pixels * image_pixels  # Image is 3 channels (RGB) and 512x512 image size #TODO change input for reducing size
-learning_rate = 0.005
+learning_rate = 0.05
 num_epochs = 25
-n_components_pca = 0.85
-batch_size = 48 
+n_components_pca = 0.90
+batch_size = 128 #doesnt afect accuracy, but affects time to train
 #image is 512 by 512 rgb
-num_classes = 2 #TODO change to 4 classes
-input_size = 96
+num_classes = 4 #TODO change to 4 classes
+input_size = 24
 
 
 def contrast_normalization(image_np):
@@ -66,9 +67,9 @@ def apply_pca_float(image_tensor, n_components=n_components_pca, input_nn=input_
     "Applying pca to preserve a certain amount of variance, and then truncating or padding the result to have the desired number of components"
     # Convert the PyTorch tensor to a NumPy array
     image_np = image_tensor.numpy()
-    
+    print(image_np)
     # Normalize the image to have pixel values between 0 and 1
-    #image_np = image_np / 255.0
+    image_np = image_np // 255.0
     
     # Apply contrast normalization
     image_np = contrast_normalization(image_np)
@@ -88,18 +89,18 @@ def apply_pca_float(image_tensor, n_components=n_components_pca, input_nn=input_
     pca_result = pca.fit_transform(images_np_flattened)
     
         # If the PCA result does not have the desired shape, pad or truncate
-    if pca_result.shape[1] < input_nn:
-        # Pad the PCA result to have the desired number of components
-        pca_result_padded = np.pad(pca_result, ((0, 0), (0, input_nn - pca_result.shape[1])), 'constant', constant_values=0)
-        transformed_image_np = pca_result_padded
-    elif pca_result.shape[1] > input_nn:
-        # Truncate the PCA result to have the desired number of components
-        transformed_image_np = pca_result[:, :input_nn]
+  # Adjust the PCA result to match the desired input size for the neural network
+    if pca_result.shape[1] != input_nn:
+        # Adjust the shape by either padding with zeros or truncating
+        pca_result_adjusted = np.zeros((pca_result.shape[0], input_nn))
+        min_cols = min(pca_result.shape[1], input_nn)
+        pca_result_adjusted[:, :min_cols] = pca_result[:, :min_cols]
+        transformed_image_np = pca_result_adjusted
     else:
         transformed_image_np = pca_result
     
     # Convert the NumPy array back to a PyTorch tensor
-    transformed_image_tensor = torch.from_numpy(transformed_image_np)
+    transformed_image_tensor = torch.from_numpy(transformed_image_np).float()
     return transformed_image_tensor
 
 # Define the transform to convert image data to tensors
@@ -107,13 +108,23 @@ transform = transforms.Compose([
     transforms.Resize((image_pixels, image_pixels)),  # Resize images for faster computation
     transforms.ToTensor(),
     transforms.Grayscale(num_output_channels=1),
-    transforms.Lambda(apply_pca_float)
+    #transforms.Lambda(apply_pca_float)
     
     ])
 
 # Load and preprocess the dataset using ImageFolder
-dataset = ImageFolder(root=dataset_path, transform=transform)
+dataset_pca = ImageFolder(root=dataset_path, transform=transform)
+#dataset[0][0]
+images_np = np.array([img.flatten() for img, _ in dataset_pca])
+labels = [label for _, label in dataset_pca]
 
+pca = PCA(n_components=input_size, svd_solver='auto')
+transformed_image = pca.fit_transform(images_np)
+
+#back to tensor
+transformed_image = torch.from_numpy(transformed_image)
+dataset = [(transformed_image[i].float(), labels[i]) for i in range(len(labels))]
+print(dataset)
 
 train_set, test_set = train_test_split(dataset, test_size=0.3, random_state=42)
 test_set, val_set = train_test_split(test_set, test_size=0.5, random_state=42)
@@ -130,13 +141,13 @@ class MLP(nn.Module):
         super(MLP, self).__init__()
         self.flatten = nn.Flatten()
         self.fc1 = nn.Linear(input_size, neurons)  #TODO change the number of neurons, with a reference
-        self.relu = nn.Sigmoid()
+        self.sigmoid = nn.Sigmoid()
         self.fc2 = nn.Linear(neurons, num_classes)  
 
     def forward(self, x):
         x = self.flatten(x)
         x = self.fc1(x)
-        x = self.relu(x)
+        x = self.sigmoid(x)
         x = self.fc2(x)
         return torch.softmax(x, dim=1)
 
@@ -214,6 +225,7 @@ with torch.no_grad():
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
+        print(labels, predicted)
 
 accuracy = correct / total
 print('Test accuracy:', accuracy)

@@ -12,35 +12,40 @@ import torchvision.transforms as transforms
 import cv2  # OpenCV for image processing
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
-#dataset_path = 'easy_dataset'
-#image_pixels = 512
-#neurons = 16
-#num_samples = 1020
-#input_size_pca =  image_pixels * image_pixels
-#learning_rate = 0.1
-#num_epochs = 150
-#n_components_pca = 0.90
-#batch_size = 128
-#num_classes = 2
-#input_size = 16
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import SelectFromModel
+
+
+
+dataset_path = 'easy_dataset'
+image_pixels = 512
+neurons = 16
+num_samples = 1020
+input_size_pca =  image_pixels * image_pixels
+learning_rate = 0.1
+num_epochs = 150
+n_components_pca = 0.90
+batch_size = 128
+num_classes = 2
+input_size = 16
 
 # variables for early stopping
 #n_epochs_stop = 3
 
 #Test accuracy: 0.9230769230769231
 
-dataset_path = 'hard_dataset'
+#dataset_path = 'hard_dataset'
 
-image_pixels = 512
-neurons = 96
-num_samples = 1020
-input_size_pca = image_pixels * image_pixels
-learning_rate = 0.5
-num_epochs = 150
-n_components_pca = 0.90
-batch_size = 128
-num_classes = 4 
-input_size = neurons
+#image_pixels = 512
+#neurons = 96
+#num_samples = 1020
+#input_size_pca = image_pixels * image_pixels
+#learning_rate = 0.5
+#num_epochs = 150
+#n_components_pca = 0.90
+#batch_size = 128
+#num_classes = 4 
+#input_size = neurons
 
 # variables for early stopping
 n_epochs_stop = 5
@@ -58,30 +63,21 @@ transform = transforms.Compose([
 
 # Load and preprocess the dataset using ImageFolder
 dataset_pca = ImageFolder(root=dataset_path, transform=transform)
-images_np = np.array([img.flatten() for img, _ in dataset_pca])
-labels = [label for _, label in dataset_pca]
+images_np = np.array([img.numpy().flatten() for img, _ in dataset_pca])
+labels = np.array([label for _, label in dataset_pca])
 
-pca = PCA(n_components=input_size, svd_solver='auto')
-transformed_images = pca.fit_transform(images_np)
 
-#plot 3 images old and transformed
+# Train a random forest classifier
+clf = RandomForestClassifier(n_estimators=input_size, verbose=1, n_jobs=-1)
+clf = clf.fit(images_np, labels)
 
-for i in range(3):
-    original_image = images_np[i].reshape(image_pixels, image_pixels)
-    # Display the original image
-    plt.imshow(original_image, cmap='gray')
-    plt.title("Original Image")
-    plt.show()
-    
-    # Since we cannot reshape the transformed image into a square, let's display it as a line plot
-    plt.plot(transformed_images[i])
-    plt.title("Transformed Image Components")
-    plt.show()
+# Select features based on importance
+model = SelectFromModel(clf, prefit=True)
+selected_features = model.transform(images_np)
 
-#back to tensor
-transformed_images = torch.from_numpy(transformed_images)
-dataset = [(transformed_images[i].float(), labels[i]) for i in range(len(labels))]
-
+# Convert the selected features back to tensors
+selected_features_tensor = torch.from_numpy(selected_features).float()
+dataset = [(selected_features_tensor[i], labels[i]) for i in range(len(labels))]
 
 train_set, test_set = train_test_split(dataset, test_size=0.3, random_state=42)
 test_set, val_set = train_test_split(test_set, test_size=0.5, random_state=42)
